@@ -45,6 +45,7 @@ RUN apt-get install --no-install-recommends -y postgresql-client mtr htop \
 RUN apt-get install --no-install-recommends -y python3-gevent \
     software-properties-common imagemagick
 
+RUN apt-get install --no-install-recommends -y npm bzip2
 RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
 RUN apt-get install --no-install-recommends -y python3.7 python3.7-dev python3.7-distutils
@@ -58,7 +59,7 @@ RUN apt-get install -yq vim
 FROM builder_base_wls as python_libs_wls
 WORKDIR /app
 COPY requirements.txt ./
-COPY git_history_recent ./
+#COPY git_history_recent ./
 RUN touch /app/rand_hash
 RUN python3.7 -m pip install --no-cache-dir -r requirements.txt \
   # Update the Django <1.11 bug in django/contrib/gis/geos/libgeos.py
@@ -81,6 +82,8 @@ RUN touch /app/.env
 COPY .git ./.git
 #COPY ledger ./ledger
 COPY wildlifecompliance ./wildlifecompliance
+RUN cd /app/wildlifecompliance/frontend/wildlifecompliance; npm install
+RUN cd /app/wildlifecompliance/frontend/wildlifecompliance; npm run build
 RUN python manage_wc.py collectstatic --noinput
 
 # upgrade postgresql to v11
