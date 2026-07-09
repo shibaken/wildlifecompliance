@@ -83,7 +83,8 @@ module.exports = {
         }
       },
       {
-        test: /datatables\.net.*/,
+        // test: /datatables\.net.*/,
+        test: /datatables\.net.*\.js$/,
         loader: 'imports-loader?define=>false,jquery=>jquery,$=>jquery'
       },
       {
