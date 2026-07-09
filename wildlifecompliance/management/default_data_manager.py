@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultDataManager(object):
+    def _get_or_create_safe(self, model, **lookup):
+        """
+        Custom get_or_create to handle MultipleObjectsReturned gracefully.
+        """
+        try:
+            return model.objects.get_or_create(**lookup)
+        except MultipleObjectsReturned:
+            # If duplicates exist, log a warning and return the first one found
+            logger.warning("Duplicates found for {} with lookup {}".format(model.__name__, lookup))
+            return model.objects.filter(**lookup).first(), False
 
     def __init__(self):
 
@@ -62,7 +72,23 @@ class DefaultDataManager(object):
                     logger.info("Created District: {}".format(district['properties']['DDT_DISTRICT_NAME']))
 
         ## Head Office Region
-        region, created = Region.objects.get_or_create(name=settings.HEAD_OFFICE_NAME, head_office=True)
+        # region, created = Region.objects.get_or_create(name=settings.HEAD_OFFICE_NAME, head_office=True)
+        # --- Modified part starts ---
+        try:
+            region, created = Region.objects.get_or_create(
+                name=settings.HEAD_OFFICE_NAME, 
+                head_office=True
+            )
+        except MultipleObjectsReturned:
+            # If multiple Head Office regions exist, pick the first one to bypass the error
+            region = Region.objects.filter(
+                name=settings.HEAD_OFFICE_NAME, 
+                head_office=True
+            ).first()
+            created = False
+            logger.warning(f"Multiple Head Office Regions found. Using the first one: {region.name}")
+        # --- Modified part ends ---
+
         if created:
             logger.info("Created Head Office Region: {}".format(region.name))
 
@@ -89,28 +115,36 @@ class DefaultDataManager(object):
 
         # Set up CM security Groups without Region/District
         created = None
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_VOLUNTEER)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_VOLUNTEER)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_VOLUNTEER)
         if created:
             logger.info("Created Volunteer Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_INFRINGEMENT_NOTICE_COORDINATOR)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_INFRINGEMENT_NOTICE_COORDINATOR)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_INFRINGEMENT_NOTICE_COORDINATOR)
         if created:
             logger.info("Created Infringement Notice Coordinator Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_PROSECUTION_COORDINATOR)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_PROSECUTION_COORDINATOR)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_PROSECUTION_COORDINATOR)
         if created:
             logger.info("Created Prosecution Coordinator Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_PROSECUTION_MANAGER)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_PROSECUTION_MANAGER)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_PROSECUTION_MANAGER)
         if created:
             logger.info("Created Prosecution Manager Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_PROSECUTION_COUNCIL)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_PROSECUTION_COUNCIL)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_PROSECUTION_COUNCIL)
         if created:
             logger.info("Created Prosecution Council Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_MANAGEMENT_READ_ONLY)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_MANAGEMENT_READ_ONLY)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_COMPLIANCE_MANAGEMENT_READ_ONLY)
         if created:
             logger.info("Created Compliance Management Read Only Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_MANAGEMENT_CALL_EMAIL_READ_ONLY)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_MANAGEMENT_CALL_EMAIL_READ_ONLY)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_COMPLIANCE_MANAGEMENT_CALL_EMAIL_READ_ONLY)
         if created:
             logger.info("Created Compliance Management Call Email Read Only Group")
-        group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_MANAGEMENT_APPROVED_EXTERNAL_USER)
+        # group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_MANAGEMENT_APPROVED_EXTERNAL_USER)
+        group, created = self._get_or_create_safe(ComplianceManagementSystemGroup, name=settings.GROUP_COMPLIANCE_MANAGEMENT_APPROVED_EXTERNAL_USER)
         if created:
             logger.info("Created Compliance Management Approved External User Group")
         #group, created = ComplianceManagementSystemGroup.objects.get_or_create(name=settings.GROUP_COMPLIANCE_ADMIN)
